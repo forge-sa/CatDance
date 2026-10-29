@@ -1,0 +1,10 @@
+{
+  "scale": 4,
+  "corner": "bottom-right",
+  "margin": 24,
+  "defaultGenre": "pop",
+  "onlineLookup": true,
+  "pollMs": 1000,
+  "ignorePlayers": ["playerctld"],
+  "ignoreTitles": ["WhatsApp", "Discord", "Telegram", "Slack", "Zoom", "Microsoft Teams", "Google Meet"]
+}

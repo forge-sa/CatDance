@@ -1,0 +1,13 @@
+{
+  "name": "catdance",
+  "productName": "CatDance",
+  "version": "1.0.0",
+  "description": "Tiny pixel cat overlay that sleeps in silence and dances to the genre you're playing",
+  "main": "main.js",
+  "desktopName": "catdance.desktop",
+  "scripts": {
+    "start": "electron .",
+    "preview": "node tools/preview.js preview.png 4 12"
+  },
+  "license": "MIT"
+}
