@@ -17,6 +17,19 @@ It sleeps when nothing is playing and dances to the genre when music starts:
 | Classical   | plays the piano (sonatas, nocturnes, solo piano…)       |
 | Orchestral  | conducts with a baton in a tux (symphonies, film scores)|
 
+Game soundtracks get a costume instead:
+
+| Soundtrack                     | Costume                                                        |
+|--------------------------------|----------------------------------------------------------------|
+| The Binding of Isaac           | turns into a crying Isaac and dances (after the "Specialist Dance for Good Items" mod): sway and bounce, flapping arms, step-touch |
+| Persona (any game)             | the Persona 3 protagonist: blue hair over one eye, headphones round the neck, school blazer with armband, hands in pockets, blue butterfly |
+| Minecraft                      | a square cat on a grass block with note-block particles       |
+
+These are spotted from the title/artist/album ("Binding of Isaac", Ridiculon,
+"Persona 3 OST", Shoji Meguro, Lotus Juice, C418, Lena Raine's Minecraft
+tracks, well-known track names like "Mass Destruction") or from the soundtrack
+album Deezer matches.
+
 ## Run
 
 ```sh

@@ -5,10 +5,11 @@ const fs = require('fs');
 const { execFile } = require('child_process');
 const { watchPlayers } = require('./lib/mpris');
 const { createResolver, cleanTrack, trackKey } = require('./lib/genre');
-const { W, H, GENRES, LABELS, PAL, ANIMS } = require('./renderer/sprites.js');
+const { W, H, GENRES, REFS, LABELS, PAL, ANIMS } = require('./renderer/sprites.js');
 
 const APP_ID = 'catdance'; // Wayland app_id, from "desktopName" in package.json
-const DEMO_ORDER = ['sleep', ...GENRES];
+const DANCES = [...GENRES, ...REFS];
+const DEMO_ORDER = ['sleep', ...DANCES];
 
 const readJSON = (file, fallback) => { try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return fallback; } };
 const log = (...a) => console.log('[catdance]', ...a);
@@ -192,13 +193,13 @@ function buildMenu() {
     {
       label: 'This song is…', enabled: !!track, submenu: [
         radio('Auto-detect', !override, () => setOverride(key, null)),
-        ...GENRES.map((g) => radio(LABELS[g], override === g, () => setOverride(key, g))),
+        ...DANCES.map((g) => radio(LABELS[g], override === g, () => setOverride(key, g))),
       ],
     },
     {
       label: 'Always dance…', submenu: [
         radio('By genre', !state.force, () => setForce(null)),
-        ...GENRES.map((g) => radio(LABELS[g], state.force === g, () => setForce(g))),
+        ...DANCES.map((g) => radio(LABELS[g], state.force === g, () => setForce(g))),
       ],
     },
     { label: 'Show off all moves', type: 'checkbox', checked: !!demo, click: toggleDemo },
@@ -233,7 +234,7 @@ function setScale(s) {
 
 // ------------------------------------------------------------ app
 if (!app.requestSingleInstanceLock()) {
-  app.quit();
+  app.exit(0);
 } else {
   app.whenReady().then(async () => {
     state = Object.assign({ cache: {}, overrides: {}, force: null, scale: null, pos: null }, readJSON(statePath(), {}));
@@ -248,13 +249,14 @@ if (!app.requestSingleInstanceLock()) {
     win = new BrowserWindow({
       width: w, height: h, useContentSize: true,
       transparent: true, frame: false, resizable: false, maximizable: false, fullscreenable: false,
-      alwaysOnTop: true, skipTaskbar: true, hasShadow: false, show: false,
+      alwaysOnTop: true, skipTaskbar: true, hasShadow: false,
       backgroundColor: '#00000000', title: 'CatDance',
       webPreferences: { preload: path.join(__dirname, 'preload.js'), backgroundThrottling: false },
     });
     win.setMenu(null);
     win.loadFile(path.join(__dirname, 'renderer', 'index.html'));
-    win.once('ready-to-show', () => win.showInactive());
+    // Shown straight away (the Hyprland rule keeps it from taking focus):
+    // waiting for 'ready-to-show' on Wayland sometimes never maps the window.
     win.webContents.on('did-finish-load', push);
     // right-click on the draggable area arrives as a "system" context menu
     win.on('system-context-menu', (e) => { e.preventDefault(); showMenu(); });
@@ -265,6 +267,8 @@ if (!app.requestSingleInstanceLock()) {
     setInterval(trackPosition, 4000);
   });
 
+  // launching it again just makes sure the cat is visible
+  app.on('second-instance', () => { if (win && !win.isDestroyed()) win.showInactive(); });
   app.on('before-quit', () => { if (state) flush(); });
   app.on('window-all-closed', () => app.quit());
   for (const sig of ['SIGINT', 'SIGTERM']) process.on(sig, () => app.quit());

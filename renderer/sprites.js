@@ -16,6 +16,9 @@
     V: '#6ad94f', v: '#2f8f2a',            // punk mohawk
     M: '#ff77bd', m: '#c8418d',            // k-pop hair
     A: '#ffd98a',                          // lamp light
+    i: '#ebbab5', I: '#c48d8c', T: '#7cc6c2', // Isaac: skin, shade, tears
+    D: '#2b3f91', d: '#5574d6',            // Persona 3 hair
+    j: '#7a5a3a', J: '#c9a77c', e: '#e4cfa8', // Minecraft cat texture
   };
 
   const spr = (s) => s.split('\n').map((r) => r.trim()).filter((r) => r.length);
@@ -230,6 +233,128 @@
     ##.
   `);
 
+  // ---- game references
+  // Isaac (The Binding of Isaac): big head, tiny body, crying.
+  const ISAAC_HEAD = spr(`
+    .....KKKKK.....
+    ...KKiiiiiKK...
+    ..KiiiiiiiiiK..
+    .KiiiiiiiiiiiK.
+    .KiiiiiiiiiiiK.
+    KiiiiiiiiiiiiiK
+    KiiiiiiiiiiiiiK
+    KiiiiiiiiiiiiiK
+    KIiiiiiiiiiiiiK
+    KIiiiiiiiiiiiIK
+    .KIiiiiiiiiiIK.
+    ..KKIIiiiIIKK..
+    ....KKKKKKK....
+  `);
+  // drawn at head (x+1, y+5)
+  const ISAAC_FACE = spr(`
+    .kkk.....kkk.
+    .kwk.....kwk.
+    .kkk.....kkk.
+    .TT..KKK..TT.
+    .TT.KwwwK.TT.
+    ..T.KKKKK.T..
+  `);
+  const ISAAC_TORSO = spr(`
+    .KiiiK.
+    KiiiiiK
+    KIiiiiK
+    KIiiiiK
+  `);
+  const ISAAC_LEG = spr(`
+    KiK
+    KiK
+    KKK
+  `);
+
+  // Persona 3 protagonist: blue hair over one eye, headphones round the neck,
+  // black school blazer.
+  const P3_HAIR = spr(`
+    ...KDDDK...
+    .KDDDDDDDK.
+    KDDdDDDdDDK
+    KDDDDDD..DK
+    KDDDK....DK
+    .KDDK....K.
+    ..KK.......
+  `);
+  const P3_PHONES = spr(`
+    KGK...KGK
+    .KgggggK.
+  `);
+  const TORSO_P3 = spr(`
+    .KkwwwkK.
+    .KkkwkkK.
+    .KkkwkkK.
+    .KkkwkkK.
+    .KkkkkkK.
+    .KkkkkkK.
+  `);
+  const LEGS_P3 = [spr(`
+    KkkK
+    KkkK
+    KKK.
+  `), spr(`
+    KkkK
+    KkkK
+    .KKK
+  `)];
+  // the series' blue butterfly: wings open / folded
+  const BUTTERFLY = [spr(`
+    U...U
+    LU.UL
+    LLkLL
+    .LkL.
+  `), spr(`
+    .....
+    .U.U.
+    .LkL.
+    ..k..
+  `)];
+
+  // Minecraft: everything is a block.
+  const MC_HEAD = spr(`
+    KKKK..KKKK
+    KJjK..KjJK
+    KKKKKKKKKK
+    KJjJJjJJjK
+    KJJjJJjJJK
+    KVkJJJJVkK
+    KJJJeeJJJK
+    KJJePPeJJK
+    KJJeeeeJJK
+    KKKKKKKKKK
+  `);
+  const MC_BODY = spr(`
+    .KKKKKKKK.
+    .KJjJJjJK.
+    .KJeeeeJK.
+    .KjeeeejK.
+    .KJjJJjJK.
+    .KKKKKKKK.
+  `);
+  const MC_LEG = spr(`
+    KJjK
+    KeeK
+    KKKK
+  `);
+  const GRASS = spr(`
+    KKKKKKKKKKKKKKKK
+    KVVVvVVVVVvVVVVK
+    KVvNVVvVNvVVvNVK
+    KNnNNNNnNNnNNNNK
+    KKKKKKKKKKKKKKKK
+  `);
+  const MC_NOTE = spr(`
+    .##
+    .#.
+    ##.
+  `);
+
   // ---- props for the newer dances
   const MOHAWK = spr(`
     ..K..
@@ -377,13 +502,13 @@
 
   // ------------------------------------------------------------ the cat
   // Tail growing from the hip: out, up, and the tip curling back in.
-  function tail(buf, bx, by, side, wag) {
-    const st = { stripe: 'S', paw: false, thick: 2 };
+  function tail(buf, bx, by, side, wag, look) {
+    const st = Object.assign({ stripe: 'S', paw: false, thick: 2 }, look);
     const ox = side > 0 ? bx + 3 : bx - 4;
     const top = by - 6;
     limb(buf, bx, by, ox, by - 1, Object.assign({ open: 1 }, st));
     limb(buf, ox, by - 1, ox + wag, top, Object.assign({ open: 0 }, st));
-    limb(buf, ox + wag, top, ox + wag - side, top - 1, Object.assign({ open: 0 }, st));
+    limb(buf, ox + wag, top, ox + wag - side, top - 1, Object.assign({ open: 0 }, st, look && look.tipFill ? { fill: look.tipFill } : null));
   }
 
   // Standing cat. hx,hy = top-left of the head. Returns anchor points.
@@ -393,13 +518,16 @@
     const lift = o.lift || 0;   // -1 left foot up, 1 right foot up
     if (o.tailSide !== 0) {
       const side = o.tailSide || 1;
-      tail(buf, side > 0 ? hx + 6 : hx + 2, ty + 4, side, o.tailWag || 0);
+      tail(buf, side > 0 ? hx + 6 : hx + 2, ty + 4, side, o.tailWag || 0, o.tailLook);
     }
-    blit(buf, LEG_L, hx + 1, ty + 6 - (lift < 0 ? 1 : 0));
-    blit(buf, LEG_R, hx + 4, ty + 6 - (lift > 0 ? 1 : 0));
+    const legs = o.legs || [LEG_L, LEG_R];
+    blit(buf, legs[0], hx + 1, ty + 6 - (lift < 0 ? 1 : 0));
+    blit(buf, legs[1], hx + 4, ty + 6 - (lift > 0 ? 1 : 0));
+    if (o.behind) o.behind(ty);
     blit(buf, o.torso || TORSO, hx, ty);
     const head = [hx + (o.headX || 0), hy + (o.headBob || 0)];
-    blit(buf, HEAD, head[0], head[1], { rows: o.face });
+    if (o.drawHead) o.drawHead(head[0], head[1]);
+    else blit(buf, HEAD, head[0], head[1], { rows: o.face });
     return {
       head,
       lShoulder: [hx + 2, ty + 1],
@@ -440,6 +568,13 @@
 
   // point between a and b (t in 0..1), rounded to the pixel grid
   const lerp = (a, b, t) => [Math.round(a[0] + (b[0] - a[0]) * t), Math.round(a[1] + (b[1] - a[1]) * t)];
+
+  function isaacHead(buf, x, y) {
+    blit(buf, ISAAC_HEAD, x, y);
+    ISAAC_FACE.forEach((row, j) => [...row].forEach((c, i) => {
+      if (c !== '.') put(buf, x + 1 + i, y + 5 + j, c);
+    }));
+  }
 
   const ANIMS = {
     // the reference pose: shown briefly when waking up / settling down
@@ -716,6 +851,77 @@
         return b;
       },
     },
+
+    // ---- game soundtrack costumes
+
+    // Isaac dancing (after the "Specialist Dance for Good Items" mod), face
+    // always forward: sway + bounce, flapping arms, step-touch.
+    isaac: {
+      bpm: 128, steps: 32,
+      frame(i) {
+        const b = blank();
+        const phase = Math.floor((i % 32) / 8), k = i % 8;
+        const sway = [0, -1, -1, 0, 0, 1, 1, 0][k];
+        const bounce = i % 2;
+        let lift = 0, lOut = false, rOut = false;
+        if (phase === 0) { lOut = rOut = !!bounce; }
+        else if (phase === 1) { lOut = k % 4 < 2; rOut = !lOut; }
+        else if (phase === 2) { lift = [0, -1, 0, 1][k % 4]; lOut = lift < 0; rOut = lift > 0; }
+        else { lOut = rOut = true; }
+        const bx = 11 + sway, hx = 7 + sway, hy = 4 + bounce;
+        blit(b, ISAAC_LEG, bx + 1, 19 - (lift < 0 ? 1 : 0));
+        blit(b, ISAAC_LEG, bx + 5, 19 - (lift > 0 ? 1 : 0));
+        blit(b, ISAAC_TORSO, bx + 1, 16);
+        limb(b, bx + 2, 17, lOut ? bx - 2 : bx - 1, lOut ? 17 : 19, { fill: 'i' });
+        limb(b, bx + 6, 17, rOut ? bx + 10 : bx + 9, rOut ? 17 : 19, { fill: 'i' });
+        isaacHead(b, hx, hy);
+        return b;
+      },
+    },
+
+    // Persona 3 protagonist: hands in pockets, cool nod, blue butterfly.
+    persona: {
+      bpm: 120, steps: 32,
+      frame(i) {
+        const b = blank();
+        const sway = [0, 0, 1, 1, 0, 0, -1, -1][Math.floor(i / 2) % 8];
+        const hx = 10 + sway, hy = 6;
+        const a = standingCat(b, hx, hy, {
+          torso: TORSO_P3, legs: LEGS_P3, headBob: i % 2 ? 0 : 1, tailWag: sway, lift: i % 8 === 3 ? 1 : 0,
+        });
+        blit(b, P3_HAIR, a.head[0] - 1, a.head[1] + 1);
+        blit(b, P3_PHONES, hx, a.ty - 1);
+        limb(b, a.lShoulder[0], a.lShoulder[1], hx + 1, a.ty + 4, { fill: 'k', paw: false });
+        limb(b, a.rShoulder[0], a.rShoulder[1], hx + 7, a.ty + 4, { fill: 'k', paw: false });
+        b[a.ty + 2][hx + 6] = 'R'; // armband on his left arm
+        const t = i * 0.35;
+        blit(b, BUTTERFLY[i % 2], Math.round(22 + Math.cos(t) * 3), Math.round(6 + Math.sin(t * 1.3) * 3));
+        return b;
+      },
+    },
+
+    // Minecraft: a square cat on a grass block, note-block particles.
+    minecraft: {
+      bpm: 80, steps: 16,
+      frame(i) {
+        const b = blank();
+        const hop = [0, 0, 0, 0, 0, 0, 1, 2, 1, 0, 0, 0, 0, 0, 0, 0][i % 16];
+        blit(b, GRASS, 7, 19);
+        const y = -hop;
+        limb(b, 18, 15 + y, 21 + (i % 4 < 2 ? 0 : 2), 9 + y, { fill: 'J', stripe: 'j', paw: false, thick: 2, open: 0 });
+        blit(b, MC_LEG, 11, 16 + y);
+        blit(b, MC_LEG, 15, 16 + y);
+        blit(b, MC_BODY, 10, 11 + y);
+        const blink = i % 16 === 12;
+        blit(b, MC_HEAD, 10, 2 + y + (i % 2), { rows: blink ? { 5: 'KkkJJJJkkK' } : null });
+        const colors = ['V', 'R', 'Y', 'L', 'P', 'U'];
+        for (let k = 0; k < 2; k++) {
+          const age = (i + k * 4) % 8;
+          glyph(b, MC_NOTE, k ? 5 : 23, 12 - age, colors[(Math.floor((i + k * 4) / 8) + k * 3) % colors.length], true);
+        }
+        return b;
+      },
+    },
   };
 
   // dance keys in menu order
@@ -723,9 +929,12 @@
   const LABELS = {
     rock: 'Rock', metal: 'Metal', punk: 'Punk', pop: 'Pop', kpop: 'K-pop', jazz: 'Jazz', soul: 'Soul',
     hiphop: 'Hip-hop', lofi: 'Lo-fi', classical: 'Classical (piano)', orchestral: 'Orchestral',
+    isaac: 'Isaac', persona: 'Persona 3', minecraft: 'Minecraft',
   };
+  // game-soundtrack costumes
+  const REFS = ['isaac', 'persona', 'minecraft'];
 
-  const api = { W, H, PAL, ANIMS, GENRES, LABELS };
+  const api = { W, H, PAL, ANIMS, GENRES, REFS, LABELS };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.CatSprites = api;
 })(this);
